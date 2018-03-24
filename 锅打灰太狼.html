@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>锅打灰太狼</title>
+		<style type="text/css">
+			*{
+				margin: 0px;
+				padding: 0px;
+			}
+			#wrap{
+				width: 320px;
+				height: 480px;
+				position: relative;
+				background: url("img/game_bg.jpg");
+			}
+			#score{
+				font-size: 30px;
+				color: #fff;
+				position: absolute;
+				left: 60px;
+				top: 2px;
+			}
+			#start{
+				width: 100%;
+				height: 70px;
+				font-size: 40px;
+				line-height: 70px;
+				text-align: center;
+				color: tomato;
+				position: absolute;
+				top: 170px;
+				cursor: pointer;
+				/*当鼠标指向它的时候变成小手*/
+			}
+			#over{
+				width: 100%;
+				height: 70px;
+				font-size: 40px;
+				line-height: 70px;
+				text-align: center;
+				color: tomato;
+				position: absolute;
+				top: 170px;
+				cursor: pointer;
+				display: none;
+			}
+			#time{
+				width: 180px;
+				height: 16px;
+				background: url("img/progress.png");
+				position: absolute;
+				left: 64px;
+				top: 66px;
+			}
+			#wolfs img{
+				position: absolute;
+			}
+		</style>
+	</head>
+	<body>
+		<!--作为整个游戏的边框-->
+		<div id="wrap">
+			<!--用于显示游戏得分-->
+			<div id="score">00</div>
+			<!--用于显示游戏剩余时间-->
+			<div id="time"></div>
+			<!--用于显示灰太狼/小灰灰-->
+			<div id="wolfs"></div>
+			<!--游戏开始-->
+			<div id="start">游戏开始</div>
+			<!--游戏结束-->
+			<div id="over">GAME_OVER</div>
+			
+		</div>
+	</body>
+	<!--<script type="text/javascript" src="jquery.js"></script>-->
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+	
+	<script type="text/javascript">
+//		产生指定区间随机数的函数
+		function randomNum(min,max){
+			return Math.floor(Math.random()*(max-min+1))+min;
+		}
+		//用来记录当前分数的变量
+		var scoreNum =0;
+//狼坑位置的数组
+		var wolfMsg = [["98px","115px"],["17px","160px"],["15px","220px"],["30px","293px"],["119px","273px"],["207px","295px"],["200px","211px"],["187px","141px"],["102px","191px"]];
+
+		$(function(){
+//			预加载,全部加载完毕,才能开始
+//		开始按钮
+			$('#start').on('click',function(){
+				//1.隐藏当前标签
+				$(this).css('display','none');
+				//2.开始游戏计时
+				gameTime();
+				//3.创建狼
+				createWolfs();
+			})
+			//点击GAME_OVER , 游戏重新开始
+			$('#over').on('click',function(){
+//				隐藏当前标签
+              $(this).css('display','none');
+              
+//				重新开始游戏时间
+//因为上局游戏已经把倒计时的标签宽度设置为0，所以这里需要重置标签宽度再开始计时
+			 $('#time').animate({
+			 	'width':'180px'
+			 },1000,'linear',function(){
+			 	scoreNum = 0;
+			 	$('#score').text(scoreNum);
+			 	 gameTime();
+			  //创建狼
+			     createWolfs();
+			 });
+			
+			})
+			//-------------------游戏计时
+			function gameTime(){
+				var timer = setInterval(function(){
+					//不断减少进度条的宽度，当宽度减少为0，关闭计时器，游戏结束
+					//获取当前时间下，进度条的宽度
+					var w  = $('#time').width();
+					w-=1;
+					if(w <= 0){
+						clearInterval(timer);
+						
+						$('#over').css('display','block');
+						clearInterval(wolfTimer);					
+						
+					}
+					$('#time').width(w);
+				},100);
+			}
+			//--------狼的创建
+			//因为狼的创建每隔一段时间自动创建，所以在计时器中去创建狼，又因为要在倒计时结束的时候停止狼的创建，所以这个计时器必须是全局的			
+			var wolfTimer;
+			//存放当前存在于页面中的狼的位置信息的数组，用于后续的判断
+			var wolfs = [];
+			function createWolfs(){
+				wolfTimer = setInterval(function(){
+					//狼的显示，其实就是图片标签创建，添加，删除的过程
+					
+					//避免前一个狼还没有消失又在同一个位置出现狼的情况，我们要先判断当前选定的随机位置上是否正在有运动，没有狼的时候再去创建，添加
+					var wolfIndex = randomNum(0,8);
+					//判断此次位置信息是否在数组中
+					if(wolfs.indexOf(wolfIndex)== -1){
+						//当前位置无狼
+						//把位置信息存入数组
+						wolfs.push(wolfIndex);//每次都添加到数组末尾
+						//创建并添加狼进狼坑
+//						document.createElement('img');
+					var wolf = $('<img/>');
+					//选定狼出现的位置
+					//因为狼出现的位置是随机的，所以需要一个随机数来当做下标去wolfMsg中取一组位置信息
+					
+					var wolfLeft = wolfMsg[wolfIndex][0];
+					//console.log(wolfLeft);
+					var wolfTop = wolfMsg[wolfIndex][1];
+					//console.log(wolfTop);
+//					wolf.css('left',wolfLeft);
+//					wolf.css('top',wolfTop);
+					//jq的链式写法
+					//wolf.css('left',wolfLeft).css('top',wolfTop);
+					wolf.css({
+						'left':wolfLeft,
+						'top':wolfTop
+					});
+					
+					
+					//控制灰太狼和小灰灰的出现
+					//规定灰太狼出现的概率为85%，小灰灰出现的概率为15%
+					wolf.attr('type',randomNum(1,100));
+					if(wolf.attr('type')<=15){
+						//此处应该出现小灰灰
+						 wolf.attr('src','img/x0.png');
+					}else{
+						//出现灰太狼
+						 wolf.attr('src','img/h0.png');
+					}
+					
+					//为狼添加图片路径
+					 //原生
+					 //img.src = 'img/h0.png';
+					
+					 //把设置好位置和图片的狼放入狼坑
+					 $('#wolfs').append(wolf);
+					 
+					 //狼运动
+					 //用来记录当前狼素材的变量
+					 var index = 0;
+					 var speed = 1;
+					wolf.attr('move',setInterval(function(){
+						index+= speed;
+						if(index >=5){
+							speed*=-1;
+						}
+						if(index <= 0 ){
+							//关闭狼运动的计时器
+							clearInterval(wolf.attr('move'));
+							//删除狼
+							wolf.remove();
+							//清除狼所占据的位置，因为狼的创建是有先后的，而且每次创建都是将狼的位置放在数组的末尾，所以，先放进去的先消失，每次都删除数组首位元素
+							wolfs.shift();
+						}
+						if(wolf.attr('type')<=15){
+						//此处应该出现小灰灰
+						 wolf.attr('src','img/x'+index+'.png');
+					}else{
+						//出现灰太狼
+						 wolf.attr('src','img/h'+index+'.png');
+					}
+				
+					
+					},150));
+					
+					//为每一个狼添加点击事件，判断点中的狼的类型，进行相应的加分或者减分
+					wolf.on('click',function(){
+						//关闭当前狼的点击事件，防止被点后再多次点击，重复加减分，并且或创建多个计时器，对狼坑数组进行多次操作，导致页面混乱
+						$(this).off();
+						//关闭狼运动的计时器，此时不应爱再让狼继续运动，而应该更换为被击中的效果图片
+						clearInterval($(this).attr('move'));
+						//判断当前被点中的狼类型
+						if($(this).attr('type') <= 15){
+							//小灰灰 -10分
+							scoreNum-=10;
+						}else{
+							//灰太狼 +10分
+							scoreNum+=10;
+						}
+						$('#score').text(scoreNum);
+						//狼被击中后哭泣
+						var index = 5;
+						$(this).attr('cry',setInterval(function(){
+							index++;
+							//判断当前被点中狼的类型
+							if($(this).attr('type') <= 15){
+							//小灰灰 
+							wolf.attr('src','img/x'+index+'.png');
+						}else{
+							//灰太狼 
+							wolf.attr('src','img/h'+index+'.png');
+						}
+						if(index >=9){
+							clearInterval(wolf.attr('cry'));
+//							index = 5;
+						//将狼移除
+						wolf.remove();
+						//解放狼坑
+						wolfs.shift();
+							
+						}
+						},150))
+					})
+					}												
+				},700);
+			}
+		})
+	</script>
+</html>
+
